@@ -1,4 +1,4 @@
-/* Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,23 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_
-#define ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_
+#include "tensorflow/examples/android/jni/object_tracking/time_log.h"
 
-#include <stdint.h>
+using namespace tensorflow;
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef LOG_TIME
+// Storage for logging functionality.
+int num_time_logs = 0;
+LogEntry time_logs[NUM_LOGS];
+
+int num_avg_entries = 0;
+AverageEntry avg_entries[NUM_LOGS];
 #endif
-
-void ConvertARGB8888ToYUV420SP(const uint32_t* const input,
-                               uint8_t* const output, int width, int height);
-
-void ConvertRGB565ToYUV420SP(const uint16_t* const input, uint8_t* const output,
-                             const int width, const int height);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_

@@ -1,4 +1,4 @@
-/* Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,23 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_
-#define ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_
+package org.tensorflow.demo;
 
-#include <stdint.h>
+import org.tensorflow.demo.Classifier.Recognition;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+import java.util.List;
 
-void ConvertARGB8888ToYUV420SP(const uint32_t* const input,
-                               uint8_t* const output, int width, int height);
-
-void ConvertRGB565ToYUV420SP(const uint16_t* const input, uint8_t* const output,
-                             const int width, const int height);
-
-#ifdef __cplusplus
+public interface ResultsView {
+  public void setResults(final List<Recognition> results);
 }
-#endif
-
-#endif  // ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_

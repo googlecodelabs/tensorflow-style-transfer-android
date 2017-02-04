@@ -13,22 +13,22 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <org.tensorflow.demo.AutoFitTextureView
-        android:id="@+id/texture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true" />
+      <org.tensorflow.demo.AutoFitTextureView
+          android:id="@+id/texture"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"/>
 
-    <org.tensorflow.demo.RecognitionScoreView
-        android:id="@+id/results"
-        android:layout_width="match_parent"
-        android:layout_height="112dp"
-        android:layout_alignParentTop="true" />
-        
-</RelativeLayout>
+      <org.tensorflow.demo.OverlayView
+          android:id="@+id/tracking_overlay"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"/>
+
+      <org.tensorflow.demo.OverlayView
+          android:id="@+id/debug_overlay"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"/>
+</FrameLayout>

@@ -1,4 +1,4 @@
-/* Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,23 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_
-#define ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_
+// NOTE: no native object detectors are currently provided or used by the code
+// in this directory. This class remains mainly for historical reasons.
+// Detection in the TF demo is done through TensorFlowMultiBoxDetector.java.
 
-#include <stdint.h>
+#include "tensorflow/examples/android/jni/object_tracking/object_detector.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace tf_tracking {
 
-void ConvertARGB8888ToYUV420SP(const uint32_t* const input,
-                               uint8_t* const output, int width, int height);
+// This is here so that the vtable gets created properly.
+ObjectDetectorBase::~ObjectDetectorBase() {}
 
-void ConvertRGB565ToYUV420SP(const uint16_t* const input, uint8_t* const output,
-                             const int width, const int height);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // ORG_TENSORFLOW_JNI_IMAGEUTILS_RGB2YUV_H_
+}  // namespace tf_tracking
