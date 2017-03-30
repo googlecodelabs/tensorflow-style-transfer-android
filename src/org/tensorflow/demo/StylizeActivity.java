@@ -51,14 +51,12 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Vector;
-import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
+
 import org.tensorflow.demo.OverlayView.DrawCallback;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.R;
 
 /**
  * Sample activity that stylizes the camera preview according to "A Learned Representation For
@@ -71,10 +69,6 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
 
   private static final Logger LOGGER = new Logger();
 
-  private static final String MODEL_FILE = "file:///android_asset/stylize_quantized.pb";
-  private static final String INPUT_NODE = "input";
-  private static final String STYLE_NODE = "style_num";
-  private static final String OUTPUT_NODE = "transformer/expand/conv3/conv/Sigmoid";
   private static final int NUM_STYLES = 26;
 
   private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -123,8 +117,6 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
   private BorderedText borderedText;
 
   private long lastProcessingTimeMs;
-
-  private TensorFlowInferenceInterface inferenceInterface;
 
   private int lastOtherStyle = 1;
 
@@ -373,8 +365,6 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     borderedText = new BorderedText(textSizePx);
     borderedText.setTypeface(Typeface.MONOSPACE);
 
-    inferenceInterface = new TensorFlowInferenceInterface(getAssets(), MODEL_FILE);
-
     previewWidth = size.getWidth();
     previewHeight = size.getHeight();
 
@@ -587,13 +577,7 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
       }
     }
 
-    // Copy the input data into TensorFlow.
-    inferenceInterface.feed(
-        INPUT_NODE, floatValues, 1, bitmap.getWidth(), bitmap.getHeight(), 3);
-    inferenceInterface.feed(STYLE_NODE, styleVals, NUM_STYLES);
-
-    inferenceInterface.run(new String[] {OUTPUT_NODE}, isDebug());
-    inferenceInterface.fetch(OUTPUT_NODE, floatValues);
+    // TODO: Process the image in TensorFlow here.
 
     for (int i = 0; i < intValues.length; ++i) {
       intValues[i] =
@@ -641,11 +625,6 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     canvas.drawBitmap(copy, matrix, new Paint());
 
     final Vector<String> lines = new Vector<>();
-
-    final String[] statLines = inferenceInterface.getStatString().split("\n");
-    Collections.addAll(lines, statLines);
-
-    lines.add("");
 
     lines.add("Frame: " + previewWidth + "x" + previewHeight);
     lines.add("Crop: " + copy.getWidth() + "x" + copy.getHeight());
