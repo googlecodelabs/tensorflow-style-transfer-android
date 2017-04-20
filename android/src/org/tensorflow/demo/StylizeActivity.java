@@ -66,6 +66,11 @@ import org.tensorflow.demo.env.Logger;
 public class StylizeActivity extends CameraActivity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
 
+  private TensorFlowInferenceInterface inferenceInterface;
+  private static final String MODEL_FILE = "file:///android_asset/stylize_quantized.pb";
+  private static final String INPUT_NODE = "input";
+  private static final String STYLE_NODE = "style_num";
+  private static final String OUTPUT_NODE = "transformer/expand/conv3/conv/Sigmoid";
   private static final int NUM_STYLES = 26;
 
   private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -365,6 +370,8 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     previewWidth = size.getWidth();
     previewHeight = size.getHeight();
 
+    inferenceInterface = new TensorFlowInferenceInterface(getAssets(), MODEL_FILE);
+
     final Display display = getWindowManager().getDefaultDisplay();
     final int screenOrientation = display.getRotation();
 
@@ -574,7 +581,15 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
       }
     }
 
-    // TODO: Process the image in TensorFlow here.
+    // Copy the input data into TensorFlow.
+    inferenceInterface.feed(INPUT_NODE, floatValues, 1, bitmap.getWidth(), bitmap.getHeight(), 3);
+    inferenceInterface.feed(STYLE_NODE, styleVals, NUM_STYLES);
+
+    // Execute the output node's dependency sub-graph.
+    inferenceInterface.run(new String[] {OUTPUT_NODE}, isDebug());
+
+    // Copy the data from TensorFlow back into our array.
+    inferenceInterface.fetch(OUTPUT_NODE, floatValues);
 
     for (int i = 0; i < intValues.length; ++i) {
       intValues[i] =
@@ -622,6 +637,11 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     canvas.drawBitmap(copy, matrix, new Paint());
 
     final Vector<String> lines = new Vector<>();
+
+    // Add these three lines:
+    final String[] statLines = inferenceInterface.getStatString().split("\n");
+    Collections.addAll(lines, statLines);
+    lines.add("");
 
     lines.add("Frame: " + previewWidth + "x" + previewHeight);
     lines.add("Crop: " + copy.getWidth() + "x" + copy.getHeight());

@@ -36,9 +36,13 @@ android {
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
-            jniLibs.srcDirs = ['libs']
+            jniLibs.srcDirs = ['libs', 'tf-deps']
         }
     }
+    repositories {
+        jcenter()
+    }
     dependencies {
+        compile files('tf-deps/libandroid_tensorflow_inference_java.jar')
     }
 }
