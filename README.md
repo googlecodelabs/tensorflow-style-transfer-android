@@ -1,4 +1,4 @@
-# Artistic Style Transfor in Android using TensorFlow
+# Artistic Style Transfer in Android using TensorFlow
 
 This repository supports the codelab for [Artistic Style Transfer in Android using TensorFlow](codelab). It
 is based on code forked from the [TensorFlow](https://github.com/tensorflow/tensorflow) repository.
