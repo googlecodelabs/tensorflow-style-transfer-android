@@ -17,7 +17,7 @@ allprojects {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 23
     buildToolsVersion "25.0.2"
 
     lintOptions {
@@ -36,13 +36,13 @@ android {
             renderscript.srcDirs = ['src']
             res.srcDirs = ['res']
             assets.srcDirs = ['assets']
-            jniLibs.srcDirs = ['libs', 'tf-deps']
+            jniLibs.srcDirs = ['libs']
         }
     }
     repositories {
         jcenter()
     }
     dependencies {
-        compile files('tf-deps/libandroid_tensorflow_inference_java.jar')
+        compile 'org.tensorflow:tensorflow-android:1.2.0-preview'
     }
 }
