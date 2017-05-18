@@ -54,7 +54,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
-import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 import org.tensorflow.demo.OverlayView.DrawCallback;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
