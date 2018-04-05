@@ -1,6 +1,6 @@
 [
   {
     "name": "Stylize",
-    "path": "stylize_quantized.pbtxt"
+    "path": "tensorflow-style-transfer-android/stylize_quantized.pbtxt"
   }
 ]
