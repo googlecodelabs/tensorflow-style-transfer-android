@@ -44,6 +44,6 @@ android {
         jcenter()
     }
     dependencies {
-        compile 'org.tensorflow:tensorflow-android:1.2.0-preview'
+        implementation 'org.tensorflow:tensorflow-android:1.4.0'
     }
 }
