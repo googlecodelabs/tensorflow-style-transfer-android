@@ -40,6 +40,10 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
+    repositories {
+        jcenter()
+    }
     dependencies {
+        compile 'org.tensorflow:tensorflow-android:+'
     }
 }
