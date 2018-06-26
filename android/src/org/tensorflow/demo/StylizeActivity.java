@@ -59,7 +59,6 @@ import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
-
 /**
  * Sample activity that stylizes the camera preview according to "A Learned Representation For
  * Artistic Style" (https://arxiv.org/abs/1610.07629)
@@ -575,30 +574,48 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     // of the form [r, g, b, r, g, b, ...].
     private void stylizeImage(final Bitmap bitmap) {
         ++frameNum;
+
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
-        if (DEBUG_MODEL) {
-            // Create a white square that steps through a black background 1 pixel per frame.
-            final int centerX = (frameNum + bitmap.getWidth() / 2) % bitmap.getWidth();
-            final int centerY = bitmap.getHeight() / 2;
-            final int squareSize = 10;
-            for (int i = 0; i < intValues.length; ++i) {
-                final int x = i % bitmap.getWidth();
-                final int y = i / bitmap.getHeight();
-                final float val =
-                        Math.abs(x - centerX) < squareSize && Math.abs(y - centerY) < squareSize ? 1.0f : 0.0f;
-                floatValues[i * 3] = val;
-                floatValues[i * 3 + 1] = val;
-                floatValues[i * 3 + 2] = val;
-            }
-        } else {
-            for (int i = 0; i < intValues.length; ++i) {
+        for (int i = 0; i < intValues.length; i++) {
                 final int val = intValues[i];
-                floatValues[i * 3] = ((val >> 16) & 0xFF) / 255.0f;
-                floatValues[i * 3 + 1] = ((val >> 8) & 0xFF) / 255.0f;
-                floatValues[i * 3 + 2] = (val & 0xFF) / 255.0f;
+                floatValues[i * 3] = val >> 16 & 0xFF;
+                floatValues[i * 3 + 1] = val >> 8 & 0xFF;
+                floatValues[i * 3 + 2] = val & 0xFF;
             }
-        }
+
+//        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+//
+//        // Turning camera output into RGB https://stackoverflow.com/questions/5669501/how-do-you-get-the-rgb-values-from-a-bitmap-on-an-android-device
+//        for (int i = 0; i < intValues.length; ++i) {
+//            final int val = intValues[i];
+//            floatValues[i * 3] = Color.red(val);
+//            floatValues[i * 3 + 1] = Color.green(val);
+//            floatValues[i * 3 + 2] = Color.blue(val);
+//        }
+
+//        if (DEBUG_MODEL) {
+//            // Create a white square that steps through a black background 1 pixel per frame.
+//            final int centerX = (frameNum + bitmap.getWidth() / 2) % bitmap.getWidth();
+//            final int centerY = bitmap.getHeight() / 2;
+//            final int squareSize = 10;
+//            for (int i = 0; i < intValues.length; ++i) {
+//                final int x = i % bitmap.getWidth();
+//                final int y = i / bitmap.getHeight();
+//                final float val =
+//                        Math.abs(x - centerX) < squareSize && Math.abs(y - centerY) < squareSize ? 1.0f : 0.0f;
+//                floatValues[i * 3] = val;
+//                floatValues[i * 3 + 1] = val;
+//                floatValues[i * 3 + 2] = val;
+//            }
+//        } else {
+//            for (int i = 0; i < intValues.length; ++i) {
+//                final int val = intValues[i];
+//                floatValues[i * 3] = ((val >> 16) & 0xFF) / 255.0f;
+//                floatValues[i * 3 + 1] = ((val >> 8) & 0xFF) / 255.0f;
+//                floatValues[i * 3 + 2] = (val & 0xFF) / 255.0f;
+//            }
+//        }
 
         //Pass the camera bitmap to Tensorflow then retrieve the graph output
         // Copy the input data into TensorFlow.
@@ -612,15 +629,61 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
         // Copy the data from TensorFlow back into our array.
         inferenceInterface.fetch(OUTPUT_NODE, floatValues);
 
+        // Turn RGB values back into a Bitmap
         for (int i = 0; i < intValues.length; ++i) {
             intValues[i] =
                     0xFF000000
-                            | (((int) (floatValues[i * 3] * 255)) << 16)
-                            | (((int) (floatValues[i * 3 + 1] * 255)) << 8)
-                            | ((int) (floatValues[i * 3 + 2] * 255));
+                            //| (intValues[i] & 0xff) << 24
+                            | (((int) (floatValues[i * 3] * 255)) << 16) //red
+                            | (((int) (floatValues[i * 3 + 1] * 255)) << 8) //green
+                            | ((int) (floatValues[i * 3 + 2] * 255)); //blue
         }
 
+//        // Turn RGB values back into a Bitmap
+//        for (int i = 0; i < intValues.length; ++i) {
+//            int red = Color.red((int)(floatValues[i * 3] * 255)); //adjusting these values
+//            int green = Color.green((int) (floatValues[i * 3 + 1] * 255));
+//            int blue = Color.blue((int) (floatValues[i * 3 + 2] * 255));
+//
+//            intValues[i] =
+//                    0xFF000000
+//                            //| (intValues[i] & 0xff) << 24
+//                            | (red & 0xff) << 16
+//                            | (green & 0xff) << 8
+//                            | blue & 0xff;
+//        }
+
+        // Assign new value to output
         bitmap.setPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+//        int width = bitmap.getWidth();
+//        int height = bitmap.getHeight();
+//        for (int i = 0; i < width; ++i) {
+//            for (int j = 0; j < height; j++) {
+//                int alpha = (int) floatValues[i];
+//                int red = (int) floatValues[i * 3 + 2] * 255;
+//                int green = (int) floatValues[i * 3 + 1] * 255;
+//                int blue = (int) floatValues[i * 3] * 255;
+//
+//                int newColor = alpha | red | green | blue;
+//                bitmap.setPixel(i, j, newColor);
+//            }
+//        }
+
+        //
+//        int width = bitmap.getWidth();
+//        int height = bitmap.getHeight();
+//        for (int i = 0; i < width; i++) {
+//            for (int j = 0; j < height; j++) {
+//                int col = bitmap.getPixel(i, j);
+//                int alpha = col & 0xFF000000;
+//                int red = (col & 0x00FF0000);
+//                int green = (col & 0x0000FF00);
+//                int blue = (col & 0x000000FF);
+//                int newColor = alpha | red | green | blue;
+//                bitmap.setPixel(i, j, newColor);
+//            }
+//        }
     }
 
     //Provides a debug overlay when you press the volume up or down buttons on the device, including
