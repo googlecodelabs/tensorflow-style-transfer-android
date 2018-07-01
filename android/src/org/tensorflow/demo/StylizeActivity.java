@@ -16,11 +16,10 @@
 
 package org.tensorflow.demo;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-//import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
-//import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -49,8 +48,6 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.Toast;
 import android.util.Log;
-//import java.io.IOException;
-//import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
@@ -62,32 +59,21 @@ import org.tensorflow.demo.env.Logger;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 /**
- * Sample activity that stylizes the camera preview according to "A Learned Representation For
- * Artistic Style" (https://arxiv.org/abs/1610.07629)
+ * Android app to perform inference the camera feed using a trained CycleGAN model
+ * Models available at https://github.com/andrewginns/CycleGAN-TF-Android/releases
+ * Based on the skeleton code from
+ * https://github.com/googlecodelabs/tensorflow-style-transfer-android
  */
 public class StylizeActivity extends CameraActivity implements OnImageAvailableListener {
     private static final Logger LOGGER = new Logger();
 
-    //Add in the Tensorflow inference code
     private TensorFlowInferenceInterface inferenceInterface;
-
-//    private static final String MODEL_FILE = "file:///android_asset/stylize_quantized.pb";
-//
-//    private static final String INPUT_NODE = "input";
-//    private static final String STYLE_NODE = "style_num";
-//    private static final String OUTPUT_NODE = "transformer/expand/conv3/conv/Sigmoid";
-
-    private static final int NUM_STYLES = 26;
 
     private static final String MODEL_FILE = "file:///android_asset/optimized_graph.pb";
     private static final String INPUT_NODE = "inputA";
     private static final String OUTPUT_NODE = "a2b_generator/output_image";
 
     private static final boolean SAVE_PREVIEW_BITMAP = false;
-
-    // Whether to actively manipulate non-selected sliders so that sum of activations always appears
-    // to be 1.0. The actual style input tensor will be normalized to sum to 1.0 regardless.
-    //private static final boolean NORMALIZE_SLIDERS = true;
 
     private static final float TEXT_SIZE_DIP = 12;
 
@@ -112,7 +98,6 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
 
-    //private final float[] styleVals = new float[NUM_STYLES];
     private int[] intValues;
     private float[] floatValues;
 
@@ -124,57 +109,36 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     private boolean computing = false;
 
     private Matrix frameToCropTransform;
-    private Matrix cropToFrameTransform;
 
     private BorderedText borderedText;
 
     private long lastProcessingTimeMs;
 
-    private int lastOtherStyle = 1;
-
-    private boolean allZero = false;
-
-    private ImageGridAdapter adapter;
-    private GridView grid;
-
     private final OnTouchListener gridTouchAdapter =
             new OnTouchListener() {
                 ImageSlider slider = null;
 
+                @SuppressLint("ClickableViewAccessibility")
                 @Override
                 public boolean onTouch(final View v, final MotionEvent event) {
                     switch (event.getActionMasked()) {
                         case MotionEvent.ACTION_DOWN:
-                            for (int i = 0; i < NUM_STYLES; ++i) {
-//                                final ImageSlider child = adapter.items[i];
-                                final Rect rect = new Rect();
-//                                child.getHitRect(rect);
-                                if (rect.contains((int) event.getX(), (int) event.getY())) {
-//                                    slider = child;
-                                    slider.setHilighted(true);
-                                }
+                            Rect rect = new Rect();
+                            if (rect.contains((int) event.getX(), (int) event.getY())) {
+                                slider.setHighlighted(true);
                             }
                             break;
 
                         case MotionEvent.ACTION_MOVE:
                             if (slider != null) {
-                                final Rect rect = new Rect();
-                                slider.getHitRect(rect);
-
-                                final float newSliderVal =
-                                        (float)
-                                                Math.min(
-                                                        1.0,
-                                                        Math.max(
-                                                                0.0, 1.0 - (event.getY() - slider.getTop()) / slider.getHeight()));
-
-                                setStyle(slider, newSliderVal);
+                                Rect rect2 = new Rect();
+                                slider.getHitRect(rect2);
                             }
                             break;
 
                         case MotionEvent.ACTION_UP:
                             if (slider != null) {
-                                slider.setHilighted(false);
+                                slider.setHighlighted(false);
                                 slider = null;
                             }
                             break;
@@ -201,23 +165,9 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
         return DESIRED_PREVIEW_SIZE;
     }
 
-//    public static Bitmap getBitmapFromAsset(final Context context, final String filePath) {
-//        final AssetManager assetManager = context.getAssets();
-//
-//        Bitmap bitmap = null;
-//        try {
-//            final InputStream inputStream = assetManager.open(filePath);
-//            bitmap = BitmapFactory.decodeStream(inputStream);
-//        } catch (final IOException e) {
-//            LOGGER.e("Error opening bitmap!", e);
-//        }
-//
-//        return bitmap;
-//    }
-
     private class ImageSlider extends ImageView {
-        private float value = 0.0f;
-        private boolean hilighted = false;
+        private float value;
+        private boolean highlighted = false;
 
         private final Paint boxPaint;
         private final Paint linePaint;
@@ -241,16 +191,11 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
             super.onDraw(canvas);
             final float y = (1.0f - value) * canvas.getHeight();
 
-            // If all sliders are zero, don't bother shading anything.
-            if (!allZero) {
-                canvas.drawRect(0, 0, canvas.getWidth(), y, boxPaint);
-            }
-
             if (value > 0.0f) {
                 canvas.drawLine(0, y, canvas.getWidth(), y, linePaint);
             }
 
-            if (hilighted) {
+            if (highlighted) {
                 canvas.drawRect(0, 0, getWidth(), getHeight(), linePaint);
             }
         }
@@ -266,14 +211,13 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
             postInvalidate();
         }
 
-        public void setHilighted(final boolean highlighted) {
-            this.hilighted = highlighted;
+        public void setHighlighted(final boolean highlighted) {
+            this.highlighted = highlighted;
             this.postInvalidate();
         }
     }
 
     private class ImageGridAdapter extends BaseAdapter {
-        //final ImageSlider[] items = new ImageSlider[NUM_STYLES];
         final ArrayList<Button> buttons = new ArrayList<>();
 
         {
@@ -313,11 +257,10 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
                         @Override
                         public void onClick(final View v) {
                             if (textureCopyBitmap != null) {
-                                // TODO(andrewharp): Save as jpeg with guaranteed unique filename.
-                                ImageUtils.saveBitmap(textureCopyBitmap, "stylized" + frameNum + ".png");
+                                ImageUtils.saveBitmap(textureCopyBitmap, "Processed" + frameNum + ".png");
                                 Toast.makeText(
                                         StylizeActivity.this,
-                                        "Saved image to: /sdcard/tensorflow/" + "stylized" + frameNum + ".png",
+                                        "Saved image to: /sdcard/tensorflow/" + "Processed" + frameNum + ".png",
                                         Toast.LENGTH_LONG)
                                         .show();
                             }
@@ -326,19 +269,6 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
 
             buttons.add(sizeButton);
             buttons.add(saveButton);
-
-//            for (int i = 0; i < NUM_STYLES; ++i) {
-//                LOGGER.v("Creating item %d", i);
-//
-//                if (items[i] == null) {
-//                    final ImageSlider slider = new ImageSlider(StylizeActivity.this);
-//                    final Bitmap bm =
-//                            getBitmapFromAsset(StylizeActivity.this, "thumbnails/style" + i + ".jpg");
-//                    slider.setImageBitmap(bm);
-//
-//                    items[i] = slider;
-//                }
-//            }
         }
 
         @Override
@@ -369,6 +299,7 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     //The app skeleton uses a custom camera fragment that will call this method once permissions have
     // been granted and the camera is available to use.
@@ -401,73 +332,11 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
                     }
                 });
 
-        adapter = new ImageGridAdapter();
-        grid = (GridView) findViewById(R.id.grid_layout);
+        ImageGridAdapter adapter = new ImageGridAdapter();
+        GridView grid = findViewById(R.id.grid_layout);
         grid.setAdapter(adapter);
         grid.setOnTouchListener(gridTouchAdapter);
 
-        //setStyle(adapter.items[0], 1.0f);
-    }
-
-    //This keeps the style sliders normalised such that their values sum to 1.0, in line with what
-    // our network is expecting.
-    private void setStyle(final ImageSlider slider, final float value) {
-        slider.setValue(value);
-
-//        if (NORMALIZE_SLIDERS) {
-//            // Slider vals correspond directly to the input tensor vals, and normalization is visually
-//            // maintained by remanipulating non-selected sliders.
-//            float otherSum = 0.0f;
-//
-//            for (int i = 0; i < NUM_STYLES; ++i) {
-//                if (adapter.items[i] != slider) {
-//                    otherSum += adapter.items[i].value;
-//                }
-//            }
-//
-//            if (otherSum > 0.0) {
-//                float highestOtherVal = 0;
-//                final float factor = otherSum > 0.0f ? (1.0f - value) / otherSum : 0.0f;
-//                for (int i = 0; i < NUM_STYLES; ++i) {
-//                    final ImageSlider child = adapter.items[i];
-//                    if (child == slider) {
-//                        continue;
-//                    }
-//                    final float newVal = child.value * factor;
-//                    child.setValue(newVal > 0.01f ? newVal : 0.0f);
-//
-//                    if (child.value > highestOtherVal) {
-//                        lastOtherStyle = i;
-//                        highestOtherVal = child.value;
-//                    }
-//                }
-//            } else {
-//                // Everything else is 0, so just pick a suitable slider to push up when the
-//                // selected one goes down.
-//                if (adapter.items[lastOtherStyle] == slider) {
-//                    lastOtherStyle = (lastOtherStyle + 1) % NUM_STYLES;
-//                }
-//                adapter.items[lastOtherStyle].setValue(1.0f - value);
-//            }
-//        }
-
-//        final boolean lastAllZero = allZero;
-//        float sum = 0.0f;
-//        for (int i = 0; i < NUM_STYLES; ++i) {
-//            sum += adapter.items[i].value;
-//        }
-//        allZero = sum == 0.0f;
-
-        // Now update the values used for the input tensor. If nothing is set, mix in everything
-        // equally. Otherwise everything is normalized to sum to 1.0.
-
-//        for (int i = 0; i < NUM_STYLES; ++i) {
-//            styleVals[i] = allZero ? 1.0f / NUM_STYLES : adapter.items[i].value / sum;
-//
-//            if (lastAllZero != allZero) {
-//                adapter.items[i].postInvalidate();
-//            }
-//        }
     }
 
     @Override
@@ -500,7 +369,7 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
                                 desiredSize, desiredSize,
                                 sensorOrientation, true);
 
-                cropToFrameTransform = new Matrix();
+                Matrix cropToFrameTransform = new Matrix();
                 frameToCropTransform.invert(cropToFrameTransform);
 
                 yuvBytes = new byte[3][];
@@ -571,8 +440,8 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
         Trace.endSection();
     }
 
-    //The provided code performs some conversion between arrays of integers (provided by Android's
-    // getPixels() method) of the form [0xRRGGBB, ...] to arrays of floats [0.0, 1.0]
+    //Conversion between arrays of integers (provided by Android's getPixels() method) of
+    // the form [0xRRGGBB, ...] to arrays of floats [-1.0, 1.0]
     // of the form [r, g, b, r, g, b, ...].
     private void stylizeImage(final Bitmap bitmap) {
         ++frameNum;
@@ -593,18 +462,15 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
                 floatValues[i * 3 + 2] = val;
             }
         } else {
-            final int test = 55;
+            //final int test = 55;
             for (int i = 0; i < intValues.length; ++i) {
                 final int val = intValues[i];
 
-//                floatValues[i * 3] = ((val >> 16) & 0xFF);
-                floatValues[i * 3] = ((val >> 16) & 0xFF)  / (127.5f) - 1f ;
+                floatValues[i * 3] = ((val >> 16) & 0xFF)  / (127.5f) - 1f ; //red
 
-//                floatValues[i * 3 + 1] = ((val >> 8) & 0xFF);
-                floatValues[i * 3 + 1] = ((val >> 8) & 0xFF) / (127.5f) - 1f;
+                floatValues[i * 3 + 1] = ((val >> 8) & 0xFF) / (127.5f) - 1f; //green
 
-//                floatValues[i * 3 + 2] = (val & 0xFF);
-                floatValues[i * 3 + 2] = (val & 0xFF) / (127.5f) - 1f;
+                floatValues[i * 3 + 2] = (val & 0xFF) / (127.5f) - 1f; //blue
 
 //                if(i == test){
 //                    Log.d("ADebugTag", "\nFloatValue1: " + Float.toString(floatValues[i * 3]));
@@ -624,11 +490,10 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
 //            Log.d("ADebugTag", "Altered Value3: " + Float.toString(floatValues[test * 3 + 2]));
         }
 
-        //Pass the camera bitmap to Tensorflow then retrieve the graph output
+        //Pass the camera bitmap to TensorFlow then retrieve the graph output
         // Copy the input data into TensorFlow.
         inferenceInterface.feed(INPUT_NODE, floatValues,
                 1, bitmap.getWidth(), bitmap.getHeight(), 3);
-        //inferenceInterface.feed(STYLE_NODE, styleVals, NUM_STYLES);
 
         // Execute the output node's dependency sub-graph.
         inferenceInterface.run(new String[] {OUTPUT_NODE}, isDebug());
@@ -637,19 +502,11 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
         inferenceInterface.fetch(OUTPUT_NODE, floatValues);
 
         for (int i = 0; i < intValues.length; ++i) {
-//            // red
-//            float red = (floatValues[i * 3] + 1f) * 127.5f;
-//
-//            // green
-//            float green = (floatValues[i * 3 + 1] + 1f) * 127.5f;
-//
-//            // blue
-//            float blue = (floatValues[i * 3 + 2] + 1f) * 127.5f;
             intValues[i] =
                     0xFF000000
-                            | (((int) ((floatValues[i * 3] + 1f) * 127.5f)) << 16)
-                            | (((int) ((floatValues[i * 3 + 1] + 1f) * 127.5f)) << 8)
-                            | ((int) ((floatValues[i * 3 + 2] + 1f) * 127.5f));
+                            | (((int) ((floatValues[i * 3] + 1f) * 127.5f)) << 16) //red
+                            | (((int) ((floatValues[i * 3 + 1] + 1f) * 127.5f)) << 8) //green
+                            | ((int) ((floatValues[i * 3 + 2] + 1f) * 127.5f)); //blue
         }
         Log.d("ADebugTag", "\noutValue3: " + Integer.toString(((int) ((floatValues[55 * 3] + 1f) * 127.5f)) << 16));
 
@@ -657,9 +514,8 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     }
 
     //Provides a debug overlay when you press the volume up or down buttons on the device, including
-    // output from TensorFlow, performance metrics and the original, unstyled, image.
+    // output from TensorFlow, performance metrics and the original, unprocessed, image.
     private void renderDebug(final Canvas canvas) {
-        // TODO(andrewharp): move result display to its own View instead of using debug overlay.
         final Bitmap texture = textureCopyBitmap;
         if (texture != null) {
             final Matrix matrix = new Matrix();
@@ -694,7 +550,7 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
 
         final Vector<String> lines = new Vector<>();
 
-        //Add Tensorflow status text to the overlay
+        //Add TensorFlow status text to the overlay
         final String[] statLines = inferenceInterface.getStatString().split("\n");
         Collections.addAll(lines, statLines);
         lines.add("");
