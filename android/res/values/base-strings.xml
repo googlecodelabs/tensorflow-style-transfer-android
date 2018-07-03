@@ -16,6 +16,6 @@
 -->
 
 <resources>
-    <string name="app_name">CycleGAN TensorFlow Demo</string>
-    <string name="activity_name_stylize">CycleGAN-TF</string>
+    <string name="app_name">CycleGAN View TensorFlow</string>
+    <string name="activity_name_stylize">TF-View</string>
 </resources>
