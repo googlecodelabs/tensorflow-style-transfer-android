@@ -69,7 +69,7 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
 
     private TensorFlowInferenceInterface inferenceInterface;
 
-    private static final String MODEL_FILE = "file:///android_asset/optimized_graph.pb";
+    private static final String MODEL_FILE = "file:///android_asset/2-quant-optimized_graph.pb";
     private static final String INPUT_NODE = "inputA";
     private static final String OUTPUT_NODE = "a2b_generator/output_image";
 
