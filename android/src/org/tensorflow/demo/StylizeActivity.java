@@ -575,15 +575,23 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
         final String[] statLines = inferenceInterface.getStatString().split("\n");
         Collections.addAll(lines, statLines);
         lines.add("");
-
-
         lines.add("Frame: " + previewWidth + "x" + previewHeight);
         lines.add("Crop: " + copy.getWidth() + "x" + copy.getHeight());
-        lines.add("View: " + canvas.getWidth() + "x" + canvas.getHeight());
-        lines.add("Rotation: " + sensorOrientation);
+//        lines.add("View: " + canvas.getWidth() + "x" + canvas.getHeight());
+//        lines.add("Rotation: " + sensorOrientation);
         lines.add("Inference time: " + lastProcessingTimeMs + "ms");
         lines.add("Desired size: " + desiredSize);
-        lines.add("Initialized size: " + initializedSize);
+//        lines.add("Initialized size: " + initializedSize);
+        lines.add("");
+        lines.add("");
+        lines.add("");
+        lines.add("");
+        lines.add("");
+        lines.add("");
+        lines.add("");
+        lines.add("");
+        lines.add("");
+        lines.add("");
 
         borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
     }
