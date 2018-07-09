@@ -69,7 +69,7 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
 
     private TensorFlowInferenceInterface inferenceInterface;
 
-    private static final String MODEL_FILE = "file:///android_asset/2-quant-optimized_graph.pb";
+    private static final String MODEL_FILE = "file:///android_asset/optimized-graph.pb";
     private static final String INPUT_NODE = "inputA";
     private static final String OUTPUT_NODE = "a2b_generator/output_image";
 
@@ -527,6 +527,17 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
                             (float) canvas.getHeight() / texture.getHeight());
             matrix.postScale(scaleFactor, scaleFactor);
             canvas.drawBitmap(texture, matrix, new Paint());
+
+            final Bitmap copy1 = cropCopyBitmap;
+            final Matrix matrix2 = new Matrix();
+//            final float scaleFactor2 = 1;
+            matrix2.postScale(scaleFactor, scaleFactor);
+            matrix2.postTranslate(
+//                    canvas.getWidth() - copy1.getWidth() * scaleFactor2,
+                    1,
+                    canvas.getHeight() - texture.getHeight() * 3.3f); //larger the num the higher up
+            canvas.drawBitmap(copy1, matrix2, new Paint());
+
         }
 
         if (!isDebug()) {
@@ -534,19 +545,12 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
         }
 
         final Bitmap copy = cropCopyBitmap;
+
         if (copy == null) {
             return;
         }
 
         canvas.drawColor(0x55000000);
-
-        final Matrix matrix = new Matrix();
-        final float scaleFactor = 2;
-        matrix.postScale(scaleFactor, scaleFactor);
-        matrix.postTranslate(
-                canvas.getWidth() - copy.getWidth() * scaleFactor,
-                canvas.getHeight() - copy.getHeight() * scaleFactor);
-        canvas.drawBitmap(copy, matrix, new Paint());
 
         final Vector<String> lines = new Vector<>();
 
