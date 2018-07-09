@@ -18,6 +18,7 @@ package org.tensorflow.demo;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -48,6 +49,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.Toast;
 import android.util.Log;
+import android.util.DisplayMetrics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
@@ -219,6 +221,7 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
 
     private class ImageGridAdapter extends BaseAdapter {
         final ArrayList<Button> buttons = new ArrayList<>();
+
 
         {
             final Button sizeButton =
@@ -516,6 +519,20 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
     //Provides a debug overlay when you press the volume up or down buttons on the device, including
     // output from TensorFlow, performance metrics and the original, unprocessed, image.
     private void renderDebug(final Canvas canvas) {
+        //get display height
+        final DisplayMetrics metrics = new DisplayMetrics();
+        Display display = getWindowManager().getDefaultDisplay();
+        display.getRealMetrics(metrics);
+        final float realHeight;
+        realHeight = metrics.heightPixels;
+
+        //get navigation bar height
+        int navigationBarHeight = 0;
+        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            navigationBarHeight = getResources().getDimensionPixelSize(resourceId);
+        }
+
         final Bitmap texture = textureCopyBitmap;
         if (texture != null) {
             final Matrix matrix = new Matrix();
@@ -535,9 +552,9 @@ public class StylizeActivity extends CameraActivity implements OnImageAvailableL
             matrix2.postTranslate(
 //                    canvas.getWidth() - copy1.getWidth() * scaleFactor2,
                     1,
-                    canvas.getHeight() - texture.getHeight() * 3.3f); //larger the num the higher up
+                    canvas.getHeight() - (realHeight/2 - navigationBarHeight)); //larger the num the higher up
             canvas.drawBitmap(copy1, matrix2, new Paint());
-
+            Log.d("ADebugTag", "Altered Value3: " + Float.toString(texture.getHeight() * 3.3f));
         }
 
         if (!isDebug()) {

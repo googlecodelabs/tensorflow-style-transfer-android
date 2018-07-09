@@ -34,6 +34,7 @@
     android:numColumns="7"
     android:stretchMode="columnWidth"
     android:layout_alignParentBottom="true"
+    android:elevation="2dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" />
 
