@@ -8,4 +8,4 @@ Android App for inference on a trained CycleGAN model
 This repository is based on the codelab for [Artistic Style Transfer in Android using TensorFlow](https://codelabs.developers.google.com/codelabs/tensorflow-style-transfer-android/). It
 is based on code forked from the [TensorFlow](https://github.com/tensorflow/tensorflow) repository.
 
-![alt text](https://github.com/andrewginns/CycleGAN-View/blob/master/Android-mockup.jpg)
+![Android Screenshots](https://github.com/andrewginns/CycleGAN-View/blob/master/Android-mockup.jpg)
